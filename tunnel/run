@@ -1,0 +1,7 @@
+#!/bin/bash
+# Give one file a public https://…trycloudflare.com address; Ctrl-C to stop.
+#   ./run ~/Dropbox/Repos/Agentscript/views2gui/schelling.html
+
+here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+exec deno run --allow-net --allow-read --allow-run=cloudflared \
+  "$here/tunnelFile.ts" "$@"
