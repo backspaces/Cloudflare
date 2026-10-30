@@ -29,8 +29,7 @@ browser ──https──▶ Cloudflare ◀══tunnel══ cloudflared ──
   appear at 1.1.1.1, then for a fetch to succeed. Asking this Mac's own DNS
   too early makes it remember "no such name" for up to a minute.
 - **It uses `--protocol http2`.** cloudflared's default, QUIC, runs over UDP,
-  which our home network drops (see
-  [MCP/docs/remote.md](../../MCP/docs/remote.md)).
+  which our home network drops.
 - **When it fails, the error includes cloudflared's log**, after 60 seconds
   at most (`tunnelFile(path, timeoutSecs)` changes that).
 

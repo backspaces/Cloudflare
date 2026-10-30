@@ -1,0 +1,10 @@
+#!/bin/bash
+# Give an html file or folder a permanent https://pg-<name>.…workers.dev address.
+#   ./run deploy ~/Dropbox/Repos/Agentscript/views2gui/schelling.html   # named schelling
+#   ./run deploy myname ~/Dropbox/Repos/Agentscript/views2gui/schelling.html
+#   ./run list
+#   ./run delete schelling
+
+here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+exec deno run --allow-run=deno --allow-read --allow-write --allow-env \
+  --allow-net=api.cloudflare.com "$here/playground.ts" "$@"
