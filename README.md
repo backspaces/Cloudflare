@@ -14,6 +14,8 @@ This repo is for trying the platform itself.
 | --- | --- | --- |
 | Quick tunnel for one file | [tunnel/](tunnel/) | `tunnelFile(path)` gives the file a public `trycloudflare.com` address |
 | Playgrounds | [playground/](playground/) | any html file or folder as its own static Worker, at a permanent `pg-<name>.…workers.dev` address |
+| Hello Worker | [hello/](hello/) | the smallest Worker with all the parts: static assets, routing, settings and secrets, KV, a Durable Object, a Cron Trigger |
+| AgentScript model in a Worker | [hello-model/](hello-model/) | HelloModel wrapped in a `fetch()`: settings from `wrangler.jsonc`, choices in the address, the model's data back as JSON |
 
 ## Still to try
 

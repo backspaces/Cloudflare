@@ -1,0 +1,13 @@
+#!/bin/bash
+# Wrangler, run in this folder, through Deno.
+#   ./run dev          # on this Mac, at http://localhost:8787
+#   ./run bundle       # write what deploy would upload to out/, upload nothing
+#   ./run deploy       # to https://hello-model.<subdomain>.workers.dev
+#   ./run tail         # the deployed Worker's requests, with CPU times, live
+
+here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+cd "$here" || exit 1
+if [ "$1" = bundle ]; then
+  exec deno run -A npm:wrangler@4.151.3 deploy --dry-run --outdir out
+fi
+exec deno run -A npm:wrangler@4.151.3 "$@"

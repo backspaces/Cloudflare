@@ -1,0 +1,24 @@
+// Cloudflare's settings for this Worker. Paths are relative to this file.
+{
+  // The Worker's name: its address is https://stepper.<subdomain>.workers.dev
+  "name": "stepper",
+  "main": "build/worker.js",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+
+  // Before dev and deploy, wrangler runs this command. It joins worker.ts
+  // and everything it imports into the one file named in "main",
+  // downloading AgentScript from agentscript.org afresh each time
+  // (--reload), so a build always has the site's current version.
+  // `./run dev` reruns it when worker.ts changes.
+  "build": {
+    "command": "deno bundle --reload=https://agentscript.org --allow-import --platform browser --external 'cloudflare:*' --output build/worker.js worker.ts",
+    "watch_dir": ["worker.ts"]
+  },
+
+  // The Durable Objects that hold the models: env.MODELS
+  "durable_objects": {
+    "bindings": [{ "name": "MODELS", "class_name": "ModelHolder" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ModelHolder"] }]
+}

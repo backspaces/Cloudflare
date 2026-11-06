@@ -1,0 +1,32 @@
+// Cloudflare's settings for this Worker. Paths are relative to this file.
+// Everything it's connected to shows up in the code as a property of `env`.
+{
+  // The Worker's name: its address is https://hello.<subdomain>.workers.dev
+  "name": "hello",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+
+  // Static assets: files in public/ are served directly, no code runs.
+  // Requests that don't match a file fall through to worker.ts.
+  "assets": { "directory": "./public" },
+
+  // Plain settings: env.GREETING. Secrets are separate: .dev.vars locally,
+  // `./run secret put SECRET_TOKEN` on Cloudflare.
+  "vars": { "GREETING": "Hello from a Cloudflare Worker" },
+
+  // KV, a global key-value store: env.NOTES. With no id, the first deploy
+  // creates it (hello-notes) in your account and later deploys find it
+  // again. Don't add the id wrangler offers: it only exists in one account,
+  // and teammates deploy to their own.
+  "kv_namespaces": [{ "binding": "NOTES" }],
+
+  // A Durable Object, one stateful object with its own storage: env.COUNTER
+  "durable_objects": {
+    "bindings": [{ "name": "COUNTER", "class_name": "Counter" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Counter"] }],
+
+  // Cron Trigger: runs scheduled() in worker.ts every 5 minutes
+  "triggers": { "crons": ["*/5 * * * *"] }
+}

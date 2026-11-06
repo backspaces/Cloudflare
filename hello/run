@@ -1,0 +1,19 @@
+#!/bin/bash
+# Wrangler, run in this folder, through Deno.
+#   ./run dev          # on this Mac, at http://localhost:8787
+#   ./run bundle       # write what deploy would upload to out/, upload nothing
+#   ./run deploy       # to https://hello.<subdomain>.workers.dev
+#   ./run tail         # the deployed Worker's logs, live
+#   ./run secret put SECRET_TOKEN
+
+here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+cd "$here" || exit 1
+if [ "$1" = bundle ]; then
+  exec deno run -A npm:wrangler@4.151.3 deploy --dry-run --outdir out
+fi
+if [ "$1" = dev ]; then
+  shift
+  # --test-scheduled: GET /__scheduled runs the Cron Trigger by hand
+  exec deno run -A npm:wrangler@4.151.3 dev --test-scheduled "$@"
+fi
+exec deno run -A npm:wrangler@4.151.3 "$@"

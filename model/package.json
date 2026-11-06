@@ -1,0 +1,4 @@
+{
+  "private": true,
+  "dependencies": { "agentscript": "0.10.27" }
+}

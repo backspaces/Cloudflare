@@ -2,3 +2,9 @@
 node_modules/
 # wrangler local state
 .wrangler/
+# local secrets for wrangler dev
+.dev.vars
+# build output: wrangler makes it from worker.ts
+build/
+# wrangler bundles, from ./run bundle
+out/
