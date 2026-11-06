@@ -1,6 +1,6 @@
 # playground
 
-[playground.ts](playground.ts) gives an html file, or a folder of them, a
+[playground.js](playground.js) gives an html file, or a folder of them, a
 permanent https address: each playground is its own Worker with only static
 assets, so Cloudflare serves the files and no code of ours runs.
 [run](run) runs it with the permissions it needs, from any folder:

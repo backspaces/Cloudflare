@@ -86,7 +86,7 @@ browser ──/mine/step──▶ Worker (keeps nothing) ──step()──▶ D
                                                            holds the model
 ```
 
-In [worker.ts](worker.ts):
+In [worker.js](worker.js):
 
 - `fetch()` is the front door. It reads the address, finds the Durable
   Object for that name (`env.MODELS.getByName(name)`), and asks it to
@@ -180,7 +180,7 @@ heavy depends on the model, and Hello-sized models fit easily.
 
 ## Where AgentScript comes from
 
-worker.ts imports the models straight from the AgentScript website, the
+worker.js imports the models straight from the AgentScript website, the
 same way an AgentScript web page does:
 
 ```ts
@@ -193,12 +193,12 @@ your Mac, when wrangler builds the Worker:
 
 1. Before `./run dev` or `./run deploy`, wrangler runs the `build` command
    in [wrangler.jsonc](wrangler.jsonc): `deno bundle`.
-2. Deno starts at worker.ts, follows every import, downloads each file from
+2. Deno starts at worker.js, follows every import, downloads each file from
    agentscript.org, and joins them all into one file, `build/worker.js`.
 3. Wrangler sends that one file to Cloudflare.
 
 ```
-worker.ts ──imports──▶ agentscript.org/models/SchellingModel.js ──▶ src/Model.js ──▶ …
+worker.js ──imports──▶ agentscript.org/models/SchellingModel.js ──▶ src/Model.js ──▶ …
      └──────── deno bundle, on your Mac ────────▶ build/worker.js ──deploy──▶ Cloudflare
 ```
 
@@ -218,10 +218,10 @@ the Worker on Cloudflare keeps the copy it was built with.
 
 | File | What it is |
 | --- | --- |
-| [worker.ts](worker.ts) | the front door and the Durable Object that holds each model |
+| [worker.js](worker.js) | the front door and the Durable Object that holds each model |
 | [wrangler.jsonc](wrangler.jsonc) | the settings: name, the build command, the Durable Object |
 | [run](run) | runs wrangler here, through Deno |
-| `build/` | worker.ts joined with AgentScript, made by the build (not in git) |
+| `build/` | worker.js joined with AgentScript, made by the build (not in git) |
 
 ## Running it yourself
 

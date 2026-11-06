@@ -1,6 +1,6 @@
 # tunnel
 
-[tunnelFile.ts](tunnelFile.ts) gives one local file a public https address
+[tunnelFile.js](tunnelFile.js) gives one local file a public https address
 through a Cloudflare quick tunnel. [run](run) runs it with the permissions
 it needs, from any folder:
 

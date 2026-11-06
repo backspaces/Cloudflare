@@ -3,16 +3,16 @@
 // this computer can be reached. Needs cloudflared on your PATH.
 //
 // From the command line (Ctrl-C to stop):
-//   deno run --allow-net --allow-read --allow-run=cloudflared tunnelFile.ts \
+//   deno run --allow-net --allow-read --allow-run=cloudflared tunnelFile.js \
 //       ~/Dropbox/Repos/Agentscript/views2gui/schelling.html
 //
 // From code:
-//   import { tunnelFile } from './tunnelFile.ts'
+//   import { tunnelFile } from './tunnelFile.js'
 //   const { url, close } = await tunnelFile('page.html')
 //   ...
 //   await close()
 
-const types: Record<string, string> = {
+const types = {
     html: 'text/html; charset=utf-8',
     js: 'text/javascript; charset=utf-8',
     css: 'text/css; charset=utf-8',
@@ -23,9 +23,9 @@ const types: Record<string, string> = {
     jpg: 'image/jpeg',
 }
 
-export async function tunnelFile(path: string, timeoutSecs = 60) {
+export async function tunnelFile(path, timeoutSecs = 60) {
     const file = await Deno.realPath(path) // fails here if it's missing
-    const ext = file.split('.').pop()!.toLowerCase()
+    const ext = file.split('.').pop().toLowerCase()
     const type = types[ext] ?? 'application/octet-stream'
 
     // Port 0 picks any free port. 127.0.0.1 keeps it off the local network:
@@ -39,7 +39,7 @@ export async function tunnelFile(path: string, timeoutSecs = 60) {
             })
     )
 
-    let child: Deno.ChildProcess
+    let child
     try {
         // http2 rather than the default QUIC, which our home network drops
         // (see MCP/docs/remote.md).
@@ -61,7 +61,7 @@ export async function tunnelFile(path: string, timeoutSecs = 60) {
             : e
     }
 
-    let closing: Promise<void> | undefined
+    let closing
     const close = () =>
         (closing ??= (async () => {
             try {
@@ -92,7 +92,7 @@ export async function tunnelFile(path: string, timeoutSecs = 60) {
 
 // cloudflared writes its log to stderr. Keep reading it, or cloudflared
 // stalls once the pipe fills, and keep the end of it for error messages.
-function readLog(stderr: ReadableStream<Uint8Array>) {
+function readLog(stderr) {
     let text = ''
     let ended = false
     let wake = () => {}
@@ -109,16 +109,16 @@ function readLog(stderr: ReadableStream<Uint8Array>) {
         })
 
     // Resolves with the first match of pattern in the log.
-    const waitFor = async (pattern: RegExp) => {
+    const waitFor = async pattern => {
         while (!pattern.test(text)) {
             if (ended) {
                 throw new Error(
                     `cloudflared exited, or took too long. Its log:\n${text}`
                 )
             }
-            await new Promise<void>(r => (wake = r))
+            await new Promise(r => (wake = r))
         }
-        return text.match(pattern)![0]
+        return text.match(pattern)[0]
     }
     return { waitFor, text: () => text }
 }
@@ -127,9 +127,9 @@ function readLog(stderr: ReadableStream<Uint8Array>) {
 // asking this Mac's resolver too early makes it cache "no such name" for up
 // to a minute, for browsers too.
 async function waitUntilLive(
-    url: string,
-    deadline: number,
-    log: () => string
+    url,
+    deadline,
+    log
 ) {
     const host = new URL(url).hostname
     let last = ''
@@ -143,7 +143,7 @@ async function waitUntilLive(
             if (res.ok) return
             last = `HTTP ${res.status}`
         } catch (e) {
-            last = (e as Error).message
+            last = e.message
         }
         await new Promise(r => setTimeout(r, 1000))
     }

@@ -91,10 +91,6 @@ model.setup()
 for (let i = 0; i < n; i++) model.step()
 ```
 
-It's plain JavaScript, not TypeScript like [hello/](../hello/). Workers
-run both equally well; JavaScript keeps this Worker in the same language
-as the AgentScript models it imports.
-
 ## Where AgentScript comes from
 
 The import is a plain path to the AgentScript repo, which sits next to

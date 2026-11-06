@@ -7,4 +7,4 @@
 
 here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
 exec deno run --allow-run=deno --allow-read --allow-write --allow-env \
-  --allow-net=api.cloudflare.com "$here/playground.ts" "$@"
+  --allow-net=api.cloudflare.com "$here/playground.js" "$@"

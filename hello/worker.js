@@ -14,20 +14,13 @@
 // What has to last goes in storage.
 import { DurableObject } from 'cloudflare:workers'
 
-// The bindings in wrangler.jsonc, as the code sees them.
-interface Env {
-    GREETING: string
-    SECRET_TOKEN?: string
-    NOTES: KVNamespace
-    COUNTER: DurableObjectNamespace<Counter>
-}
-
 export default {
     // Every request that isn't a file in public/.
     //   request: a standard web Request, as in the browser
-    //   env:     the bindings
+    //   env:     the bindings in wrangler.jsonc: env.GREETING, env.SECRET_TOKEN,
+    //            env.NOTES (KV), env.COUNTER (the Durable Object)
     //   ctx:     ctx.waitUntil(promise) keeps work going after the response
-    async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
+    async fetch(request, env, _ctx) {
         const url = new URL(request.url)
 
         switch (url.pathname) {
@@ -62,7 +55,7 @@ export default {
     },
 
     // The Cron Trigger: no request, just the time.
-    async scheduled(controller: ScheduledController, env: Env) {
+    async scheduled(controller, env) {
         const time = new Date(controller.scheduledTime).toISOString()
         await env.NOTES.put('lastCron', time)
         console.log('cron ran at', time)
@@ -74,7 +67,7 @@ export default {
 // local; they're really remote calls.
 export class Counter extends DurableObject {
     async increment() {
-        const count = ((await this.ctx.storage.get<number>('count')) ?? 0) + 1
+        const count = ((await this.ctx.storage.get('count')) ?? 0) + 1
         await this.ctx.storage.put('count', count)
         return count
     }

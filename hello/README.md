@@ -37,7 +37,7 @@ clerk works out the answer.
 
 This hello Worker does both. Its page, `public/index.html`, is a plain file,
 like a playground. The buttons on the page send requests that are answered
-by code, in `worker.ts`.
+by code, in `worker.js`.
 
 ## What's unique about Workers
 
@@ -166,7 +166,7 @@ clock running it; visit http://localhost:8787/__scheduled to run it by hand.
 | File | What it is | Who reads it | Sent to Cloudflare? |
 | --- | --- | --- | --- |
 | [public/index.html](public/index.html) | the page with the buttons | Cloudflare | yes, exactly as it is |
-| [worker.ts](worker.ts) | the code: answers each request, and runs on the clock | Cloudflare | yes, after wrangler joins it with what it imports into one file |
+| [worker.js](worker.js) | the code: answers each request, and runs on the clock | Cloudflare | yes, after wrangler joins it with what it imports into one file |
 | [wrangler.jsonc](wrangler.jsonc) | the settings: name, files, storage, schedule | wrangler | the settings in it, yes; the file itself, no |
 | `.dev.vars` | the secret, for your Mac only (not in git) | wrangler, during `dev` | never; the real secret goes up separately |
 | [run](run) | runs wrangler in this folder, through Deno | the Terminal | no |
@@ -177,7 +177,7 @@ clock running it; visit http://localhost:8787/__scheduled to run it by hand.
 
 - `state/`: the pretend storage for `./run dev`, your Mac's own note and
   count. It has nothing to do with the live site's storage.
-- `tmp/`: worker.ts joined into one file, ready to run. Open
+- `tmp/`: worker.js joined into one file, ready to run. Open
   `tmp/dev-…/worker.js` to see what that looks like.
 - `cache/`: things wrangler remembers, like which Cloudflare account you use.
 
@@ -198,7 +198,7 @@ someone changes a setting on the website, the next deploy puts the file's
 value back (wrangler warns you first). Make changes in wrangler.jsonc, and
 use the website for looking.
 
-### Reading worker.ts
+### Reading worker.js
 
 The code has two parts that Cloudflare calls, and one class.
 
@@ -223,8 +223,8 @@ To see what would be sent first, without sending it:
 
     ./run bundle
 
-This writes it to `out/` (git ignores it): `out/worker.js` is worker.ts
-turned into plain JavaScript, 2 KB. That one file is all the code
+This writes it to `out/` (git ignores it): `out/worker.js` is worker.js
+as Cloudflare will get it, 2 KB. That one file is all the code
 Cloudflare gets. Then:
 
     ./run deploy

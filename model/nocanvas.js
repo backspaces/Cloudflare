@@ -3,10 +3,11 @@
 // lets it load; anything that actually draws on it fails, loudly.
 // Import it before anything that imports AgentScript.
 
-// deno-lint-ignore no-explicit-any
-const g = globalThis as any
-g.OffscreenCanvas ??= class {
-    constructor(public width: number, public height: number) {}
+globalThis.OffscreenCanvas ??= class {
+    constructor(width, height) {
+        this.width = width
+        this.height = height
+    }
     getContext() {
         return new Proxy(
             {},

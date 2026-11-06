@@ -4,7 +4,7 @@ node_modules/
 .wrangler/
 # local secrets for wrangler dev
 .dev.vars
-# build output: wrangler makes it from worker.ts
+# build output: wrangler makes it from worker.js
 build/
 # wrangler bundles, from ./run bundle
 out/

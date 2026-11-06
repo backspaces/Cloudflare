@@ -3,12 +3,12 @@
 {
   // The Worker's name: its address is https://hello.<subdomain>.workers.dev
   "name": "hello",
-  "main": "worker.ts",
+  "main": "worker.js",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
 
   // Static assets: files in public/ are served directly, no code runs.
-  // Requests that don't match a file fall through to worker.ts.
+  // Requests that don't match a file fall through to worker.js.
   "assets": { "directory": "./public" },
 
   // Plain settings: env.GREETING. Secrets are separate: .dev.vars locally,
@@ -27,6 +27,6 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Counter"] }],
 
-  // Cron Trigger: runs scheduled() in worker.ts every 5 minutes
+  // Cron Trigger: runs scheduled() in worker.js every 5 minutes
   "triggers": { "crons": ["*/5 * * * *"] }
 }

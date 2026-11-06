@@ -4,20 +4,18 @@
 //                                return the result as JSON, forget it
 //
 // README.md here has the whole story.
-import './nocanvas.ts' // first: AgentScript needs a canvas as it loads
+import './nocanvas.js' // first: AgentScript needs a canvas as it loads
 import { util } from 'agentscript/dist/agentscript2d.js'
 import Model from './schelling.js'
 
 // One character per patch, a row per line: X, O or . for empty.
-// deno-lint-ignore no-explicit-any
-function grid(model: any) {
-    // deno-lint-ignore no-explicit-any
-    return model.patches.map((p: any) =>
+function grid(model) {
+    return model.patches.map(p =>
         p.turtlesHere.length ? p.turtlesHere[0].breed.name[0] : '.'
     )
 }
 
-function run(ticks: number, seed?: number) {
+function run(ticks, seed) {
     // randomSeed swaps in its own Math.random, for repeatable runs. Every
     // request shares this isolate's globals, so put the real one back.
     const random = Math.random
@@ -46,7 +44,7 @@ function run(ticks: number, seed?: number) {
 }
 
 export default {
-    fetch(req: Request) {
+    fetch(req) {
         const url = new URL(req.url)
         if (url.pathname === '/run') {
             const ticks = Math.min(Number(url.searchParams.get('ticks') ?? 100), 1000)

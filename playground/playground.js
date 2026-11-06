@@ -3,9 +3,9 @@
 // Every name gets the pg- prefix, so a playground can't replace a real Worker
 // and list/delete only ever see playgrounds.
 //
-//   deno run ... playground.ts deploy [name] <file.html | folder>
-//   deno run ... playground.ts list
-//   deno run ... playground.ts delete <name>
+//   deno run ... playground.js deploy [name] <file.html | folder>
+//   deno run ... playground.js list
+//   deno run ... playground.js delete <name>
 //
 // A file is served as index.html. A folder is served as it is (minus dotfiles
 // and node_modules), so it should have its own index.html. Without a name,
@@ -15,7 +15,7 @@
 const wrangler = ['run', '-A', 'npm:wrangler@4.151.3']
 const prefix = 'pg-'
 
-function workerName(name: string) {
+function workerName(name) {
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(name) || name.length > 60)
         throw new Error(
             `bad name "${name}": use lowercase letters, digits and dashes`
@@ -25,9 +25,9 @@ function workerName(name: string) {
 
 // The file's name without .html, or the folder's name. An index.html is
 // named after its folder. My_Model.html becomes my-model.
-export function nameFromPath(path: string) {
+export function nameFromPath(path) {
     const parts = path.replace(/\/+$/, '').split('/')
-    let base = parts.pop()!.replace(/\.html?$/i, '')
+    let base = parts.pop().replace(/\.html?$/i, '')
     if (base.toLowerCase() === 'index') base = parts.pop() ?? base
     return base
         .toLowerCase()
@@ -38,7 +38,7 @@ export function nameFromPath(path: string) {
 
 // Wrangler runs in an empty temp folder so it never picks up a
 // wrangler.jsonc from wherever this was started.
-async function runWrangler(args: string[], cwd: string) {
+async function runWrangler(args, cwd) {
     const { code } = await new Deno.Command('deno', {
         args: [...wrangler, ...args],
         cwd,
@@ -46,7 +46,7 @@ async function runWrangler(args: string[], cwd: string) {
     if (code !== 0) throw new Error(`wrangler ${args[0]} failed`)
 }
 
-async function wranglerJson(args: string[]) {
+async function wranglerJson(args) {
     const { code, stdout } = await new Deno.Command('deno', {
         args: [...wrangler, ...args, '--json'],
         stderr: 'null',
@@ -55,7 +55,7 @@ async function wranglerJson(args: string[]) {
     return JSON.parse(new TextDecoder().decode(stdout))
 }
 
-async function copyFolder(from: string, to: string) {
+async function copyFolder(from, to) {
     await Deno.mkdir(to, { recursive: true })
     for await (const entry of Deno.readDir(from)) {
         if (entry.name.startsWith('.') || entry.name === 'node_modules')
@@ -67,7 +67,7 @@ async function copyFolder(from: string, to: string) {
     }
 }
 
-export async function deploy(name: string, path: string) {
+export async function deploy(name, path) {
     const worker = workerName(name)
     const source = await Deno.realPath(path) // fails here if it's missing
     const tmp = await Deno.makeTempDir({ prefix: 'playground-' })
@@ -93,7 +93,7 @@ export async function deploy(name: string, path: string) {
     }
 }
 
-export async function remove(name: string) {
+export async function remove(name) {
     const tmp = await Deno.makeTempDir({ prefix: 'playground-' })
     try {
         await runWrangler(['delete', workerName(name)], tmp)
@@ -114,7 +114,7 @@ export async function list() {
         throw new Error('several accounts: set CLOUDFLARE_ACCOUNT_ID')
     const { token } = await wranglerJson(['auth', 'token'])
 
-    const api = async (path: string) => {
+    const api = async path => {
         const res = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${account}${path}`,
             { headers: { authorization: `Bearer ${token}` } }
@@ -125,7 +125,7 @@ export async function list() {
         return body.result
     }
     const { subdomain } = await api('/workers/subdomain')
-    const scripts: { id: string; modified_on: string }[] = await api(
+    const scripts = await api(
         '/workers/scripts'
     )
     return scripts
@@ -158,7 +158,7 @@ if (import.meta.main) {
             Deno.exit(1)
         }
     } catch (e) {
-        console.error((e as Error).message)
+        console.error(e.message)
         Deno.exit(1)
     }
 }

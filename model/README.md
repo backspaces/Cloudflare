@@ -30,11 +30,11 @@ web: JSON, images, a model's data files. Only the JavaScript must be
 uploaded.
 
 So the code is **bundled**: before uploading, wrangler starts at
-[worker.ts](worker.ts), follows its imports, and joins every file they
+[worker.js](worker.js), follows its imports, and joins every file they
 reach into one `worker.js`, which is what gets uploaded.
 
 ```
-worker.ts ──▶ schelling.js ──▶ agentscript ──▶ ...   follow the imports
+worker.js ──▶ schelling.js ──▶ agentscript ──▶ ...   follow the imports
                                                      on this computer
    └──────────────── one worker.js ───────────▶ Cloudflare
 ```
@@ -75,12 +75,12 @@ mind:
 
 So for now this folder uses the `dist/` bundle, keeps its own copy of the
 model in [schelling.js](schelling.js) (with its import changed), and loads
-[nocanvas.ts](nocanvas.ts), a stand-in canvas that lets AgentScript load
+[nocanvas.js](nocanvas.js), a stand-in canvas that lets AgentScript load
 and fails loudly if anything draws on it.
 
 AgentScript's commit 656471f2 fixes all three: relative imports, the canvas
 made on first use, and `vendor/` published. Once that's on npm as 0.10.28,
-both workaround files go, and [worker.ts](worker.ts) imports the model
+both workaround files go, and [worker.js](worker.js) imports the model
 straight from the package:
 
 ```ts
