@@ -207,7 +207,7 @@ worker.js ──imports──▶ agentscript.org/models/SchellingModel.js ──
 all of AgentScript the Worker contains; the views, controls, maps and 3D
 are never downloaded, because nothing imports them.
 
-It downloads them afresh on every build (that's the `--reload` in the
+It downloads them afresh on every build (that's the `-r` in the
 command), so each deploy uses whatever is on agentscript.org at that
 moment. If the website changes, the next deploy picks it up; until then,
 the Worker on Cloudflare keeps the copy it was built with.
@@ -228,6 +228,7 @@ the Worker on Cloudflare keeps the copy it was built with.
 From this folder:
 
     ./run dev          # on this Mac, at http://localhost:8787
+    ./run bundle       # write what Cloudflare would get into out/, send nothing
     ./run deploy       # to Cloudflare
     ./run tail         # watch requests, with their CPU times
 

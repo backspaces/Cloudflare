@@ -93,36 +93,80 @@ for (let i = 0; i < n; i++) model.step()
 
 ## Where AgentScript comes from
 
-The import is a plain path to the AgentScript repo, which sits next to
-this one in `Repos/`:
+worker.js imports the model from the AgentScript website, the same way an
+AgentScript web page does:
 
 ```js
-import HelloModel from '../../Agentscript/models/HelloModel.js'
+import HelloModel from 'https://agentscript.org/models/HelloModel.js'
 ```
 
-There's no download and no npm: wrangler reads the files from your Mac.
-So this only works with AgentScript checked out beside this repo.
+But a Worker can't download code while it runs: Cloudflare only runs code
+that was sent to it. And wrangler, which sends it, only follows imports of
+files on your Mac. So something has to download AgentScript first. That's
+the `build` entry in [wrangler.jsonc](wrangler.jsonc):
 
-A Worker on Cloudflare can't load code while it runs, so wrangler does it
-first. It starts at worker.js, follows every import, and joins all the
-files into one. That one file is what Cloudflare gets.
+```jsonc
+"main": "build/worker.js",
+"build": {
+  "command": "deno bundle -r --allow-import -o build/worker.js worker.js",
+  "watch_dir": ["worker.js"]
+}
+```
+
+Wrangler runs the command before `dev`, `bundle` and `deploy`. It's an
+ordinary command; here, Deno does the work:
+
+| Part | What it means |
+| --- | --- |
+| `deno bundle` | join worker.js and everything it imports into one file |
+| `-r` | download fresh each time, so a build gets agentscript.org as it is now |
+| `--allow-import` | Deno's permission to download imports from the web |
+| `-o build/worker.js` | where to write the one file |
+| `worker.js` | where to start |
+
+`"main"` then names `build/worker.js`, the joined file, not `worker.js`.
+And `watch_dir` makes `./run dev` build again when you edit worker.js.
+`build/` is made each time, and git ignores it.
+
+```
+worker.js ──imports──▶ agentscript.org/models/HelloModel.js ──▶ src/Model.js ──▶ …
+     └──────── deno bundle, on your Mac ────────▶ build/worker.js ──deploy──▶ Cloudflare
+```
+
+Any Worker that imports from the web needs a `build` entry like this.
+One that only imports its own files doesn't: wrangler joins those itself,
+as in [hello/](../hello/).
+
+### Your own copy of AgentScript instead
+
+worker.js has a second import, commented out, that takes HelloModel from
+the AgentScript repo beside this one:
+
+```js
+// import HelloModel from '../../Agentscript/models/HelloModel.js'
+```
+
+Swap the two lines to use it: then nothing is downloaded, and the Worker
+gets your copy, changes you haven't pushed included. The build works the
+same either way.
 
 ## See what Cloudflare gets
 
     ./run bundle
 
-This builds the Worker without sending it, and writes the result to
-`out/`:
+This builds the Worker without sending it. Its printout lists each file
+Deno downloads: 19 from agentscript.org, the model and AgentScript's
+`Model`, `World`, `Turtles`, `Patches`, `Links` and their helpers. No
+views, no drawing, no `dist/`.
 
-- `out/worker.js`: the one file, 98 KB (25 KB compressed). Search it for
+It writes the result to `out/`:
+
+- `out/worker.js`: the one file, 97 KB (25 KB compressed). Search it for
   `HelloModel` to find the model, and for `fetch(` to find the wrapper.
-- `out/worker.js.map`: lists the files it was made from. There are 18:
-  worker.js, HelloModel.js, and 16 AgentScript files from `src/` and
-  `vendor/`. No views, no drawing, no `dist/`.
 
 The bundler leaves out functions nothing uses: of `utils.js`'s 167, only
 42 are in. It can't leave out parts of a class, though, so every class it
-needs comes whole, with all its methods. That's most of the 98 KB.
+needs comes whole, with all its methods. That's most of the 97 KB.
 
 `out/` is made by wrangler, and git ignores it.
 
@@ -135,6 +179,7 @@ needs comes whole, with all its methods. That's most of the 98 KB.
 
 ## Try another model
 
-Change the import to another model in `../../Agentscript/models/`, and
-change `HelloModel` where it's used. Bigger models take more computer time
+Change the import to another model, like
+`https://agentscript.org/models/SchellingModel.js`, and change
+`HelloModel` where it's used. Bigger models take more computer time
 per request; see [stepper/](../stepper/) for measurements.

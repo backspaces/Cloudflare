@@ -2,12 +2,24 @@
 {
   // The Worker's name: its address is https://hello-model.<subdomain>.workers.dev
   "name": "hello-model",
-  // The code Cloudflare runs: its fetch() answers every request
-  "main": "worker.js",
+  // The code Cloudflare runs: its fetch() answers every request. It's
+  // build/worker.js, not worker.js: the build below makes it.
+  "main": "build/worker.js",
   // Which version of Cloudflare's runtime behavior to use
   "compatibility_date": "2026-10-01",
   // Keep each request's logs and CPU time: see them with ./run tail
   "observability": { "enabled": true },
+
+  // The build: wrangler runs this command before dev, bundle and deploy.
+  // worker.js imports AgentScript from agentscript.org, and wrangler can't
+  // download imports, so Deno does: it starts at worker.js, downloads every
+  // file it imports (-r: fresh each time, not an old copy), and joins them
+  // all into build/worker.js, the one file "main" names. git ignores build/.
+  // watch_dir: ./run dev builds again when worker.js changes.
+  "build": {
+    "command": "deno bundle -r --allow-import -o build/worker.js worker.js",
+    "watch_dir": ["worker.js"]
+  },
 
   // Settings handed to the Worker as `env`. These are the defaults: a
   // request can change STEPS and RETURN, for itself only, in the address.

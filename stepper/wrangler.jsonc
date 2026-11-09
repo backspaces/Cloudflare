@@ -6,13 +6,16 @@
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
 
-  // Before dev and deploy, wrangler runs this command. It joins worker.js
-  // and everything it imports into the one file named in "main",
-  // downloading AgentScript from agentscript.org afresh each time
-  // (--reload), so a build always has the site's current version.
-  // `./run dev` reruns it when worker.js changes.
+  // The build: wrangler runs this command before dev, bundle and deploy.
+  // worker.js imports AgentScript from agentscript.org, and wrangler can't
+  // download imports, so Deno does: it starts at worker.js, downloads every
+  // file it imports (-r: fresh each time, not an old copy), and joins them
+  // all into build/worker.js, the one file "main" names. git ignores build/.
+  // --external 'cloudflare:*' leaves `import ... from 'cloudflare:workers'`
+  // for Cloudflare to fill in: it isn't on the web, it's built into Workers.
+  // watch_dir: ./run dev builds again when worker.js changes.
   "build": {
-    "command": "deno bundle --reload=https://agentscript.org --allow-import --platform browser --external 'cloudflare:*' --output build/worker.js worker.js",
+    "command": "deno bundle -r --allow-import --external 'cloudflare:*' -o build/worker.js worker.js",
     "watch_dir": ["worker.js"]
   },
 
