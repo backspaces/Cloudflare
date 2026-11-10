@@ -6,6 +6,10 @@
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
 
+  // The page with buttons: files in public/ are served as they are, so /
+  // is public/index.html. Other addresses go to the Worker.
+  "assets": { "directory": "./public" },
+
   // The build: wrangler runs this command before dev, bundle and deploy.
   // worker.js imports AgentScript from agentscript.org, and wrangler can't
   // download imports, so Deno does: it starts at worker.js, downloads every
@@ -19,9 +23,9 @@
     "watch_dir": ["worker.js"]
   },
 
-  // The Durable Objects that hold the models: env.MODELS
+  // The Durable Object that holds the model: env.MODEL
   "durable_objects": {
-    "bindings": [{ "name": "MODELS", "class_name": "ModelHolder" }]
+    "bindings": [{ "name": "MODEL", "class_name": "ModelHolder" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ModelHolder"] }]
 }

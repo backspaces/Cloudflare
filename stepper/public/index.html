@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Stepper</title>
+        <style>
+            body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; }
+            label, button { margin: 0.2rem 0.4rem 0.2rem 0; }
+            #note { padding: 0.5rem; border-radius: 4px; }
+            .rebuilt { background: #fff3c4; }
+            .error { background: #ffd9d9; }
+            pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; }
+        </style>
+    </head>
+    <body>
+        <h1>Stepper</h1>
+        <p>
+            AgentScript's Schelling model, living on Cloudflare in a Durable
+            Object. There's one model, shared: anyone using this page steps
+            the same one. Each button sends one request to the Worker; the
+            answer is the model's data.
+        </p>
+
+        <p>
+            <label>Settings <input id="settings" value="density=90&amp;tolerance=50" size="28" /></label>
+        </p>
+        <p>
+            <button onclick="ask('setup', $('settings').value)">Setup</button>
+            <button onclick="ask('step')">Step</button>
+            <button onclick="ask('step', 'n=10')">Step ×10</button>
+            <button onclick="ask('show')">Show</button>
+        </p>
+
+        <p id="note">
+            Setup makes a model. Leave it alone for more than about 10
+            seconds and Cloudflare puts its object to sleep, forgetting the
+            model. The next button then shows it being rebuilt.
+        </p>
+        <pre id="out"></pre>
+
+        <script>
+            const $ = id => document.getElementById(id)
+
+            async function ask(action, query = '') {
+                const path = '/' + action + (query ? '?' + query : '')
+                const answer = await (await fetch(path)).json()
+
+                const note = $('note')
+                note.className = ''
+                if (answer.error) {
+                    note.className = 'error'
+                    note.textContent = answer.error
+                } else if (action === 'setup') {
+                    note.textContent = `A new model, at tick 0, saved to storage.`
+                } else if (answer.replayed) {
+                    note.className = 'rebuilt'
+                    note.textContent =
+                        `The object had gone to sleep and forgotten the model. ` +
+                        `It woke at ${answer.awakeSince} and rebuilt it from storage, ` +
+                        `replaying ${answer.replayed} steps.`
+                } else {
+                    note.textContent = `Tick ${answer.ticks}` +
+                        (answer.done ? ', done.' : '.') +
+                        ` The model was still in memory.`
+                }
+                $('out').textContent = path + ' →\n' + JSON.stringify(answer, null, 2)
+            }
+        </script>
+    </body>
+</html>

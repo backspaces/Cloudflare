@@ -12,10 +12,14 @@
 // Each request makes a fresh model: nothing is kept between requests.
 //
 // AgentScript comes from agentscript.org. The build in wrangler.jsonc
-// downloads it, because a Worker can't download code while it runs. To use
-// your own copy of AgentScript instead, beside this repo, swap these lines:
-import HelloModel from 'https://agentscript.org/models/HelloModel.js'
-// import HelloModel from '../../Agentscript/models/HelloModel.js'
+// downloads it, because a Worker can't download code while it runs.
+//
+// The model is imported as plain `Model`, as AgentScript's own pages do, so
+// running another model only means changing the address. Use one line:
+import Model from 'https://agentscript.org/models/HelloModel.js'
+// import Model from 'https://agentscript.org/models/SchellingModel.js'
+// Or your own copy of AgentScript, beside this repo:
+// import Model from '../../Agentscript/models/HelloModel.js'
 
 export default {
     async fetch(request, env) {
@@ -32,12 +36,12 @@ export default {
         } = Object.fromEntries(new URL(request.url).searchParams)
         const n = Math.min(Number(steps), env.MAX_STEPS)
 
-        const model = new HelloModel()
+        const model = new Model()
         // Any other name in the address is one of the model's variables
         for (const [key, value] of Object.entries(settings)) {
             if (!(key in model)) {
                 return Response.json(
-                    { error: `HelloModel has no "${key}"` },
+                    { error: `the model has no "${key}"` },
                     { status: 400 }
                 )
             }

@@ -18,7 +18,7 @@ then open these in your browser:
 | http://localhost:8787/?steps=5&return=turtles,links | 5 steps, then the turtles and links |
 | http://localhost:8787/?population=30&return=links | 30 turtles, and their links |
 | http://localhost:8787/?steps=99999 | stops at 1000 steps, the most allowed |
-| http://localhost:8787/?nope=1 | an error: HelloModel has no "nope" |
+| http://localhost:8787/?nope=1 | an error: the model has no "nope" |
 
 Each request makes a new model, runs it, and answers. Nothing is kept
 between requests.
@@ -85,7 +85,7 @@ Everything after `?` in the address:
 mark each in and out. Its middle is how any AgentScript model runs:
 
 ```js
-const model = new HelloModel()
+const model = new Model()
 await model.startup() // loads any data the model needs; Hello has none
 model.setup()
 for (let i = 0; i < n; i++) model.step()
@@ -97,8 +97,12 @@ worker.js imports the model from the AgentScript website, the same way an
 AgentScript web page does:
 
 ```js
-import HelloModel from 'https://agentscript.org/models/HelloModel.js'
+import Model from 'https://agentscript.org/models/HelloModel.js'
 ```
+
+The model is imported as plain `Model`, the way AgentScript's own pages
+do. The name after `import` is whatever the importing file chooses, so
+any model can be `Model`, and the rest of worker.js never names it.
 
 But a Worker can't download code while it runs: Cloudflare only runs code
 that was sent to it. And wrangler, which sends it, only follows imports of
@@ -139,16 +143,25 @@ as in [hello/](../hello/).
 
 ### Your own copy of AgentScript instead
 
-worker.js has a second import, commented out, that takes HelloModel from
+worker.js has another import, commented out, that takes HelloModel from
 the AgentScript repo beside this one:
 
 ```js
-// import HelloModel from '../../Agentscript/models/HelloModel.js'
+// import Model from '../../Agentscript/models/HelloModel.js'
 ```
 
-Swap the two lines to use it: then nothing is downloaded, and the Worker
-gets your copy, changes you haven't pushed included. The build works the
-same either way.
+Use it in place of the first one: then nothing is downloaded, and the Worker
+gets your copy, changes you haven't pushed included.
+
+Leave wrangler.jsonc alone: the same `build` entry works for both. Deno
+follows a path to a file on your Mac just as it follows an address on the
+web; it simply has nothing to download, so `-r` and `--allow-import` do
+nothing. Switching is one line in worker.js.
+
+(With only the local import, the build isn't strictly needed: wrangler
+follows paths to files itself. You could delete `"build"` and set
+`"main"` back to `"worker.js"`. But then switching would mean changing
+both files, so it's simpler to keep the build.)
 
 ## See what Cloudflare gets
 
@@ -179,7 +192,14 @@ needs comes whole, with all its methods. That's most of the 97 KB.
 
 ## Try another model
 
-Change the import to another model, like
-`https://agentscript.org/models/SchellingModel.js`, and change
-`HelloModel` where it's used. Bigger models take more computer time
+Change the address in the import to another model. worker.js has one
+ready, commented out:
+
+```js
+import Model from 'https://agentscript.org/models/SchellingModel.js'
+```
+
+Nothing else changes, because the rest of worker.js only says `Model`.
+The model's own variables change, though: Schelling has `density` and
+`tolerance` where Hello has `population` and `speed`. Bigger models take more computer time
 per request; see [stepper/](../stepper/) for measurements.

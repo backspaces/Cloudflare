@@ -1,11 +1,11 @@
 # stepper
 
-An AgentScript model that lives on Cloudflare and takes one step each time
-you ask. There's no page and no drawing: each answer is the model's data,
-as text. It's the **M** of AgentScript's Model, View, Controller, on its
-own.
+An AgentScript model that lives on Cloudflare: you set it up, then step it
+whenever you like, and it remembers where it was, even hours later. Each
+answer is the model's data, as text. It's the **M** of AgentScript's Model,
+View, Controller, on its own; the page here only has buttons to drive it.
 
-It's here to answer two questions:
+It answers two questions:
 
 1. **Where does a model live between steps?** A Worker forgets everything
    after each request (see [hello/](../hello/)), but a model has to
@@ -19,56 +19,57 @@ Live: https://stepper.backspaces.workers.dev
 
 ## Try it
 
-Open these addresses in your browser, in order:
+Open https://stepper.backspaces.workers.dev (or, with `./run dev`,
+http://localhost:8787). The page has:
 
-1. https://stepper.backspaces.workers.dev/mine/setup?model=schelling
+- **Settings**: Schelling's two, filled in with its defaults,
+  `density=90&tolerance=50`. Edit them before Setup to try others.
+- **Setup** makes a new model. **Step** and **Step ×10** run it. **Show**
+  shows it without stepping.
 
-   Makes a new Schelling model, named `mine`, and shows its data. The name
-   is up to you; each name is a separate model.
+Then wait a minute and press Step again. The yellow note says the model
+had been forgotten and was rebuilt: that's below, in "It forgets".
 
-2. https://stepper.backspaces.workers.dev/mine/step
+There's one model, and everyone shares it: if a teammate presses Setup
+while you're stepping, your next Step carries on from their new model.
+That's the point of a Durable Object (below), shown the friendly way.
 
-   Runs one step and shows the data again. Reload to step again, and watch
-   `ticks` count up and `percentHappy` rise.
-
-3. https://stepper.backspaces.workers.dev/mine
-
-   Shows the data without stepping.
-
-The answer looks like this (Firefox shows it neatly; in Chrome, tick
-"Pretty print"):
+The answer looks like this:
 
 ```json
 {
-  "model": "schelling",
   "ticks": 2,
   "done": false,
-  "params": { "density": 90, "tolerance": 50, "percentHappy": 85 },
+  "settings": { "density": 90, "tolerance": 50 },
+  "results": { "percentHappy": 85 },
   "counts": { "turtles": 2380, "patches": 2601, "links": 0 },
   "dataBytes": 234687,
-  "awakeSince": "2026-11-05T20:41:02.114Z"
+  "awakeSince": "2026-11-05T20:41:02.114Z",
+  "replayed": 0
 }
 ```
 
-- `params` are the model's settings and results, its own variables.
+- `settings` are the model's variables you choose.
+- `results` are the ones it works out: `percentHappy` is the percent of
+  turtles happy with their neighbors. At 100, the model is `done`.
 - `counts` says how many turtles, patches and links it has.
 - `dataBytes` is how big all their data is, written out as text.
-- `awakeSince` is when the object holding the model last woke up (more
-  below).
+- `awakeSince` is when the object holding the model last woke up.
+- `replayed` is how many steps were rerun to rebuild a forgotten model: 0
+  if it was still in memory.
 
-Change settings when you set up, by adding them to the address:
+### Without the page
 
-    /mine/setup?model=schelling&density=70&tolerance=40
+Each button is just an address, so a browser, `curl` or another program
+can do the same:
+
+    /setup?density=70&tolerance=40
+    /step
+    /step?n=10
+    /show
 
 To see every turtle, patch and link, not just how many there are, add
-`agents` to any address:
-
-    /mine/step?agents
-
-There are two models to try: `schelling`, and `hello` (AgentScript's
-HelloModel, which also has links):
-
-    /h/setup?model=hello&population=5&agents
+`agents` to any of them (`/step?agents`, or `&agents`).
 
 ## Where the model lives
 
@@ -76,54 +77,110 @@ A Worker can't keep the model: the next request may be answered by a
 different copy of the code, in another city, and JavaScript variables don't
 carry over.
 
-So each model lives in its own **Durable Object**, the kind of object
-hello uses for its counter: one object, in one place, that every request
-for its name reaches. hello's Counter keeps a number; here, each object
-keeps a whole AgentScript model.
+So the model lives in a **Durable Object**, the kind of object hello uses
+for its counter: one object, in one place, that every request reaches.
+hello's Counter keeps a number; this one keeps a whole AgentScript model.
 
 ```
-browser ──/mine/step──▶ Worker (keeps nothing) ──step()──▶ Durable Object "mine"
-                                                           holds the model
+browser ──/step──▶ Worker (keeps nothing) ──step()──▶ Durable Object "schelling"
+                                                       holds the model
 ```
 
 In [worker.js](worker.js):
 
 - `fetch()` is the front door. It reads the address, finds the Durable
-  Object for that name (`env.MODELS.getByName(name)`), and asks it to
-  `setup()`, `step()` or show its `data()`.
+  Object (`env.MODEL.getByName('schelling')`), and asks it to `setup()`,
+  `step()` or `show()`.
 - `class ModelHolder` is the Durable Object. Its `model` variable holds the
   AgentScript model.
 
-But there's a catch, and it's the point of this experiment. The model is
-kept in an ordinary variable, in memory. A Durable Object that nobody uses
-for a while is put to sleep by Cloudflare, and when it sleeps, its memory
-is gone. The next request wakes up a fresh object with no model, and gets:
+Asking for a different name would give a different object, with its own
+model: that's how a Worker could keep one model per person. Here, one
+shared model keeps it simple.
 
-    no model here: either it was never set up, or it was forgotten when
-    this object went to sleep
+### It forgets
 
-`awakeSince` shows when that happened: if it changes, the object slept and
-woke up again.
+A Durable Object keeps its variables in memory, and memory doesn't last. A
+Durable Object that nobody uses for a while is put to sleep by Cloudflare,
+and its memory, the model with it, is gone. We measured how quickly:
 
-hello's counter doesn't have this problem, because it saves the count in
-the object's **storage**, which survives sleep. A model could be saved
-there too, but that means turning all its turtles, patches and links into
-data that can be stored, and back into a working model on waking. That's
-what `dataBytes` measures: how much there would be to save.
-
-### How long before it forgets?
-
-Very quickly. We set up models, left each alone for a different time, then
-checked it once:
-
-| Left alone for | Model |
+| Left alone for | Model in memory |
 | --- | --- |
 | 5 seconds | still there |
 | 10 seconds and longer | forgotten |
 
-So a model kept only in memory lasts while you keep stepping it, and is
-gone 10 seconds after you stop. To keep a model for longer, it has to be
-saved to the object's storage. That's the next experiment.
+`awakeSince` shows it: when it changes, the object slept and woke up again.
+
+### So it remembers a recipe
+
+hello's counter doesn't have this problem, because it saves the count in
+the object's **storage**, which survives sleep. Stepper does the same, but
+it doesn't save the whole model, all its turtles and patches. It saves a
+**recipe** for making it again, a few dozen bytes:
+
+```json
+{ "settings": { "density": "70" }, "seed": 1840211873, "ticks": 12 }
+```
+
+- **settings**: the ones chosen at Setup.
+- **seed**: a random number picked once, at Setup.
+- **ticks**: how many steps have run, saved again after every step.
+
+When a request finds no model in memory, the object follows the recipe:
+it makes the model with the same settings, gives it the same seed, runs
+`setup()`, and then runs `step()` until it reaches tick 12. Then it carries
+on with the request. `replayed` says how many steps that took.
+
+In short: **remember which step we're on, and to rebuild, run the model
+that many steps, with a seed that makes the run come out the same.**
+
+### Why the replay is exact
+
+AgentScript models use random numbers, for where turtles start and where
+they move. A seed makes those numbers come out the same every time, so the
+same steps give the same model, turtle for turtle. We checked: a Schelling
+model's 2,300 turtles were all in the same places after a replay.
+
+The model doesn't know about any of this. AgentScript has a seeded random
+number generator, `util.randomSeed()`, made for testing; stepper gives one
+to the model and swaps it into `Math.random` only while the model runs.
+Finished AgentScript models aren't usually seeded, and they don't need to
+change for this.
+
+It's exact only while three things hold:
+
+1. **All the model's randomness comes from `Math.random`.** AgentScript's
+   own `oneOf()`, `shuffle()` and the rest do. A model with its own random
+   numbers, from somewhere else, would replay differently.
+2. **The model depends on nothing outside itself**: not the clock, not
+   data fetched from the web that might change. Same model, same run.
+3. **AgentScript's code is the same as on the first run.** The Worker
+   carries the copy it was built with. A redeploy that brings a changed
+   SchellingModel or AgentScript could replay differently, so after a
+   redeploy, start again with Setup.
+
+### What it costs, and what comes next
+
+The cost is computer time on waking: replaying is running the model again,
+and it grows with the number of steps. Schelling's first steps are its
+heaviest (see below), but it finishes in a few dozen steps, so a replay is
+never long. A model that runs for thousands of steps would spend longer
+and longer waking.
+
+The fix for that is **save and restore**: save every turtle, patch and
+link, and rebuild the model from them. Waking would be instant, with no
+replay, and none of the three conditions above would matter. `dataBytes`
+shows how much there is to save: about 230 KB for Schelling, which fits
+easily in a Durable Object's storage. A middle way would combine the two:
+save everything now and then, and replay only the steps since.
+
+What's missing is in AgentScript: it has no way yet to rebuild a working
+model from its data. That would take something like `model.toData()` and
+`Model.fromData(data)`, restoring each turtle with its id, breed and
+position, each patch's variables, each link between the right two turtles,
+and the model's own variables and `ticks`. It's the planned next step, and
+it would be useful outside Cloudflare too: saving a model to a file, or
+sending one to another page.
 
 ## What a model's data is
 
@@ -162,7 +219,8 @@ each request. From `./run tail`:
 | Hello, setup | 8 ms |
 | Hello, each step | 1 to 5 ms |
 
-(ms is a thousandth of a second.)
+(ms is a thousandth of a second. Stepper ran AgentScript's HelloModel too
+at first, for comparison.)
 
 - **Hello is light.** A step takes a few ms.
 - **Schelling's first steps are heavy**, because nearly every unhappy turtle
@@ -180,11 +238,11 @@ heavy depends on the model, and Hello-sized models fit easily.
 
 ## Where AgentScript comes from
 
-worker.js imports the models straight from the AgentScript website, the
+worker.js imports the model straight from the AgentScript website, the
 same way an AgentScript web page does:
 
-```ts
-import Schelling from 'https://agentscript.org/models/SchellingModel.js'
+```js
+import Model from 'https://agentscript.org/models/SchellingModel.js'
 ```
 
 But a Worker can't download code while it runs: Cloudflare only runs code
@@ -218,8 +276,9 @@ the Worker on Cloudflare keeps the copy it was built with.
 
 | File | What it is |
 | --- | --- |
-| [worker.js](worker.js) | the front door and the Durable Object that holds each model |
-| [wrangler.jsonc](wrangler.jsonc) | the settings: name, the build command, the Durable Object |
+| [worker.js](worker.js) | the front door, and the Durable Object that holds and remembers the model |
+| [public/index.html](public/index.html) | the page with buttons, served as it is |
+| [wrangler.jsonc](wrangler.jsonc) | the settings: name, the build command, the page, the Durable Object (`env.MODEL`) |
 | [run](run) | runs wrangler here, through Deno |
 | `build/` | worker.js joined with AgentScript, made by the build (not in git) |
 
