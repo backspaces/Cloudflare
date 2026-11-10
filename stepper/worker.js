@@ -30,6 +30,9 @@ export default {
             )
         }
 
+        // Browsers ask for a tab icon on their own. It isn't a model.
+        if (name === 'favicon.ico') return new Response(null, { status: 404 })
+
         const options = Object.fromEntries(url.searchParams)
         const agents = 'agents' in options
         const holder = env.MODELS.getByName(name)

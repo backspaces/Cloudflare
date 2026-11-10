@@ -19,6 +19,11 @@ import HelloModel from 'https://agentscript.org/models/HelloModel.js'
 
 export default {
     async fetch(request, env) {
+        // Browsers ask for a tab icon on their own: don't run a model for it.
+        if (new URL(request.url).pathname === '/favicon.ico') {
+            return new Response(null, { status: 404 })
+        }
+
         // In: everything after ? in the address, e.g. { steps: '50' }
         const {
             steps = env.STEPS,
