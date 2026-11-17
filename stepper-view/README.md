@@ -69,10 +69,10 @@ from the first model it's given. So the page replaces those along with
 the model (`view.drawOptions.turtles = model.turtles`, and the same for
 links), or every step would draw the first model again.
 
-For that, the page and the Worker share one file,
-[public/modelData.js](public/modelData.js). Files in `public/` are served
-as they are, so the page can load it; and [worker.js](worker.js) imports
-it from there, so the build joins it into the Worker too.
+The page and the Worker both import `fromData()` from AgentScript's
+[ModelData.js](https://agentscript.org/src/ModelData.js): the page while
+it runs, in the browser, and the Worker when it's built, like the rest of
+AgentScript.
 
 ## What it costs
 
@@ -91,7 +91,6 @@ the console shows an extra "Xs: … Os: …" line for each step.
 | File | What it is |
 | --- | --- |
 | [public/index.html](public/index.html) | the page: three buttons and the drawing |
-| [public/modelData.js](public/modelData.js) | `toData()` and `fromData()`, used by the page and by worker.js |
 | [worker.js](worker.js) | stepper-save's Worker: the front door, and the Durable Object that holds the model |
 | [wrangler.jsonc](wrangler.jsonc) | the settings |
 | [run](run) | runs wrangler here, through Deno |

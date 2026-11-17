@@ -34,8 +34,15 @@ The answer has two new fields:
 
 ## Saving and restoring a model
 
-[modelData.js](modelData.js) has two functions, and they would work for
-any AgentScript model, not only Schelling:
+AgentScript's [ModelData.js](https://agentscript.org/src/ModelData.js)
+has two functions, and they work for any AgentScript model, not only
+Schelling. worker.js imports them from agentscript.org, like the model:
+
+```js
+import { toData, fromData } from 'https://agentscript.org/src/ModelData.js'
+```
+
+Then:
 
 ```js
 const data = toData(model)                 // the whole model, as plain data
@@ -87,11 +94,12 @@ and its replay loop are gone.
   same as replaying a few Schelling steps, but it stays the same however
   long the model has run.
 
-## Not in AgentScript yet
+## Not only for Cloudflare
 
-modelData.js lives here for now, as a trial. It's meant to move into
-AgentScript, so any model, on Cloudflare or not, can be saved to a file
-or sent to another page.
+ModelData.js began here, as a trial, and is now part of AgentScript, so
+any model, on Cloudflare or not, can be saved to a file or sent to
+another page. [stepper-view/](../stepper-view/) does that: it sends the
+model to a page that draws it.
 
 ## Running it yourself
 

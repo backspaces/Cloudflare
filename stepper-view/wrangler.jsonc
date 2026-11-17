@@ -8,8 +8,6 @@
 
   // The page that draws the model: files in public/ are served as they
   // are, so / is public/index.html. Other addresses go to the Worker.
-  // public/modelData.js is used twice: the page loads it from here, and
-  // worker.js imports it, so the build joins it into the Worker too.
   "assets": { "directory": "./public" },
 
   // The build: wrangler runs this command before dev, bundle and deploy.
@@ -19,11 +17,11 @@
   // all into build/worker.js, the one file "main" names. git ignores build/.
   // --external 'cloudflare:*' leaves `import ... from 'cloudflare:workers'`
   // for Cloudflare to fill in: it isn't on the web, it's built into Workers.
-  // watch_dir: ./run dev builds again when worker.js or modelData.js
-  // changes. (The page needs no build: reload it in the browser.)
+  // watch_dir: ./run dev builds again when worker.js changes. (The page
+  // needs no build: reload it in the browser.)
   "build": {
     "command": "deno bundle -r --allow-import --external 'cloudflare:*' -o build/worker.js worker.js",
-    "watch_dir": ["worker.js", "public/modelData.js"]
+    "watch_dir": ["worker.js"]
   },
 
   // The Durable Object that holds the model: env.MODEL

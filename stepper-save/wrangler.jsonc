@@ -17,10 +17,10 @@
   // all into build/worker.js, the one file "main" names. git ignores build/.
   // --external 'cloudflare:*' leaves `import ... from 'cloudflare:workers'`
   // for Cloudflare to fill in: it isn't on the web, it's built into Workers.
-  // watch_dir: ./run dev builds again when worker.js or modelData.js changes.
+  // watch_dir: ./run dev builds again when worker.js changes.
   "build": {
     "command": "deno bundle -r --allow-import --external 'cloudflare:*' -o build/worker.js worker.js",
-    "watch_dir": ["worker.js", "modelData.js"]
+    "watch_dir": ["worker.js"]
   },
 
   // The Durable Object that holds the model: env.MODEL

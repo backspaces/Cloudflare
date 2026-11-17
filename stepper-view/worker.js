@@ -17,7 +17,7 @@
 // wrangler builds, and joins them into one file (see wrangler.jsonc).
 import { DurableObject } from 'cloudflare:workers'
 import Model from 'https://agentscript.org/models/SchellingModel.js'
-import { toData, fromData } from './public/modelData.js'
+import { toData, fromData } from 'https://agentscript.org/src/ModelData.js'
 
 // The model's variables you can choose, and the ones it works out.
 const settings = ['density', 'tolerance']
