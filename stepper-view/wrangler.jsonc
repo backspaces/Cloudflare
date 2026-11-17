@@ -1,0 +1,34 @@
+// Cloudflare's settings for this Worker. Paths are relative to this file.
+{
+  // The Worker's name: its address is https://stepper-view.<subdomain>.workers.dev
+  "name": "stepper-view",
+  "main": "build/worker.js",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+
+  // The page that draws the model: files in public/ are served as they
+  // are, so / is public/index.html. Other addresses go to the Worker.
+  // public/modelData.js is used twice: the page loads it from here, and
+  // worker.js imports it, so the build joins it into the Worker too.
+  "assets": { "directory": "./public" },
+
+  // The build: wrangler runs this command before dev, bundle and deploy.
+  // worker.js imports AgentScript from agentscript.org, and wrangler can't
+  // download imports, so Deno does: it starts at worker.js, downloads every
+  // file it imports (-r: fresh each time, not an old copy), and joins them
+  // all into build/worker.js, the one file "main" names. git ignores build/.
+  // --external 'cloudflare:*' leaves `import ... from 'cloudflare:workers'`
+  // for Cloudflare to fill in: it isn't on the web, it's built into Workers.
+  // watch_dir: ./run dev builds again when worker.js or modelData.js
+  // changes. (The page needs no build: reload it in the browser.)
+  "build": {
+    "command": "deno bundle -r --allow-import --external 'cloudflare:*' -o build/worker.js worker.js",
+    "watch_dir": ["worker.js", "public/modelData.js"]
+  },
+
+  // The Durable Object that holds the model: env.MODEL
+  "durable_objects": {
+    "bindings": [{ "name": "MODEL", "class_name": "ModelHolder" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ModelHolder"] }]
+}

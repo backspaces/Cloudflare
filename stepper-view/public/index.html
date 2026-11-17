@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Stepper, drawn</title>
+        <style>
+            body { font-family: system-ui, sans-serif; margin: 1rem; }
+            button { margin: 0 0.3rem 0.5rem 0; }
+            #status { color: #555; }
+        </style>
+    </head>
+    <body>
+        <div>
+            <button id="setup">Setup</button>
+            <button id="step">Step</button>
+            <button id="run">Run</button>
+            <span id="status"></span>
+        </div>
+        <div id="modelDiv"></div>
+
+        <script type="module">
+            // The model runs on Cloudflare. This page only draws it: each
+            // button asks the Worker, which answers with the whole model as
+            // data, and fromData() turns that into a model TwoDraw can draw.
+            // Each answer is also logged in the console.
+            import Model from 'https://agentscript.org/models/SchellingModel.js'
+            import TwoDraw from 'https://agentscript.org/src/TwoDraw.js'
+            import { fromData } from './modelData.js'
+
+            const $ = id => document.getElementById(id)
+            let view = null
+            let running = false
+
+            // Ask the Worker, then draw what it sends back.
+            async function ask(action) {
+                const answer = await (await fetch(`/${action}?agents`)).json()
+                if (answer.error) {
+                    $('status').textContent = answer.error
+                    return answer
+                }
+                const { turtles, patches, links, ...rest } = answer
+                console.log(action, rest)
+
+                const model = await fromData(Model, answer)
+                if (!view) {
+                    // The same drawing as views2/schelling.html
+                    view = new TwoDraw(model, {
+                        div: 'modelDiv',
+                        patchSize: 10,
+                        drawOptions: {
+                            patchesColor: 'white',
+                            turtlesColor: t => (t.breed.name === 'Os' ? 'red' : 'blue'),
+                            turtlesShape: 'square',
+                            turtlesRotate: false,
+                        },
+                    })
+                }
+                // Draw the new model. TwoDraw keeps the turtles and links to
+                // draw in its options, taken from the first model it was
+                // given, so they're replaced too.
+                view.model = model
+                view.drawOptions.turtles = model.turtles
+                view.drawOptions.links = model.links
+                view.draw()
+                // Where the Worker's model came from: made new by Setup,
+                // restored from storage after its object slept, or still in
+                // the object's memory.
+                const from =
+                    action === 'setup' ? 'a new model'
+                    : answer.restored ? 'restored from storage'
+                    : 'still in memory'
+                $('status').textContent =
+                    `tick ${model.ticks}, ${model.percentHappy}% happy` +
+                    (model.done ? ', done' : '') + ` (${from})`
+                return answer
+            }
+
+            // Run: one step at a time, each after the last is drawn, until
+            // the model is done or Stop is pressed.
+            async function run() {
+                running = !running
+                $('run').textContent = running ? 'Stop' : 'Run'
+                while (running) {
+                    const answer = await ask('step')
+                    if (answer.error || answer.done) break
+                    await new Promise(resolve => setTimeout(resolve, 200))
+                }
+                running = false
+                $('run').textContent = 'Run'
+            }
+
+            $('setup').onclick = () => ask('setup')
+            $('step').onclick = () => ask('step')
+            $('run').onclick = run
+
+            ask('show') // draw the model there is now, if any
+        </script>
+    </body>
+</html>
