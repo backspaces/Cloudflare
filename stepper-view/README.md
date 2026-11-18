@@ -9,13 +9,24 @@ instead of as text.
 Read [stepper/](../stepper/) and [stepper-save/](../stepper-save/) first.
 The Worker here is stepper-save's, unchanged; only the page is new.
 
+Live: https://stepper-view.backspaces.workers.dev
+
 ## Try it
 
-    ./run dev
+Open https://stepper-view.backspaces.workers.dev, where the model runs on
+Cloudflare. Or try it on your Mac first: `./run dev` in this folder, then
+open http://localhost:8787. On your Mac, the model runs in wrangler's
+pretend Cloudflare, with its own storage, so it's a different model from
+the live one.
 
-Open http://localhost:8787. The page has three buttons:
+The page has, as in stepper:
 
-- **Setup** makes a new model, and draws it.
+- **Settings**: Schelling's two, filled in with its defaults,
+  `density=90&tolerance=50`. Edit them before Setup to try others.
+
+and three buttons:
+
+- **Setup** makes a new model with those settings, and draws it.
 - **Step** runs one step, and draws it.
 - **Run** steps again and again, drawing each, until the model is done
   or you press Stop.

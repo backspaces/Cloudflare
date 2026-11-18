@@ -10,6 +10,9 @@
         </style>
     </head>
     <body>
+        <p>
+            <label>Settings <input id="settings" value="density=90&amp;tolerance=50" size="28" /></label>
+        </p>
         <div>
             <button id="setup">Setup</button>
             <button id="step">Step</button>
@@ -31,9 +34,11 @@
             let view = null
             let running = false
 
-            // Ask the Worker, then draw what it sends back.
-            async function ask(action) {
-                const answer = await (await fetch(`/${action}?agents`)).json()
+            // Ask the Worker, then draw what it sends back. Setup sends the
+            // settings too, like /setup?density=90&tolerance=50&agents
+            async function ask(action, settings = '') {
+                const query = settings ? settings + '&agents' : 'agents'
+                const answer = await (await fetch(`/${action}?${query}`)).json()
                 if (answer.error) {
                     $('status').textContent = answer.error
                     return answer
@@ -89,7 +94,7 @@
                 $('run').textContent = 'Run'
             }
 
-            $('setup').onclick = () => ask('setup')
+            $('setup').onclick = () => ask('setup', $('settings').value)
             $('step').onclick = () => ask('step')
             $('run').onclick = run
 

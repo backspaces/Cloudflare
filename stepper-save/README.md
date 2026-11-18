@@ -17,14 +17,19 @@ Read [stepper/](../stepper/) first: this README only covers what's
 different. The buttons, the answers, the Durable Object, why it forgets
 and where AgentScript comes from are all the same, and explained there.
 
+Live: https://stepper-save.backspaces.workers.dev
+
 ## Try it
 
-    ./run dev
+Open https://stepper-save.backspaces.workers.dev (or, with `./run dev`,
+http://localhost:8787). Press Setup, then Step a few times. Then wait a
+minute and press Show: the yellow note says the model was restored from
+storage, and how big the saved model was. (On your Mac, stopping
+`./run dev` and starting it again also makes it forget, without the
+wait.)
 
-Open http://localhost:8787, press Setup, then Step a few times. Then wait
-a minute (or stop `./run dev` and start it again) and press Show: the
-yellow note says the model was restored from storage, and how big the
-saved model was.
+The live model is shared, as in stepper: if someone else presses Setup
+while you're trying it, you'll see their model instead.
 
 The answer has two new fields:
 
