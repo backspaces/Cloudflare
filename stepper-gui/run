@@ -1,0 +1,22 @@
+#!/bin/bash
+# Wrangler, run in this folder, through Deno.
+#   ./run dev          # on this Mac, at http://localhost:8787
+#   ./run bundle       # write what deploy would upload to out/, upload nothing
+#   ./run deploy       # to https://stepper-gui.<subdomain>.workers.dev
+#   ./run tail         # the deployed Worker's logs, live
+
+here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+cd "$here" || exit 1
+if [ "$1" = bundle ]; then
+  exec deno run -A npm:wrangler@4.151.3 deploy --dry-run --outdir out
+fi
+# ./run dev keeps its pretend storage (Durable Objects, KV) in your home
+# folder, in ~/.wrangler-state/<this folder's name>, not in .wrangler/ here.
+# This folder may be in Dropbox, and Dropbox syncing a database while
+# wrangler writes it can break it.
+state="$HOME/.wrangler-state/$(basename "$here")"
+if [ "$1" = dev ]; then
+  shift
+  exec deno run -A npm:wrangler@4.151.3 dev --persist-to "$state" "$@"
+fi
+exec deno run -A npm:wrangler@4.151.3 "$@"

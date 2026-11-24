@@ -1,0 +1,106 @@
+<html>
+    <head>
+        <title>Schelling, on Cloudflare</title>
+    </head>
+
+    <body>
+        <script type="module">
+            import Animator from 'https://agentscript.org/src/Animator.js'
+            import TwoDraw from 'https://agentscript.org/src/TwoDraw.js'
+            import SchellingModel from 'https://agentscript.org/models/SchellingModel.js'
+            import remote from './remote.js'
+            import GUIDiv from 'https://agentscript.org/src/GUIDiv.js'
+
+            // This model runs on Cloudflare: see remote.js
+            const Model = remote(SchellingModel, 'schelling')
+
+            const model = new Model()
+            model.setup()
+
+            const view = new TwoDraw(model, {
+                div: 'modelDiv',
+                patchSize: 10,
+                drawOptions: {
+                    patchesColor: 'white',
+                    turtlesColor: t => (t.breed.name === 'Os' ? 'red' : 'blue'),
+                    turtlesShape: 'square',
+                    turtlesRotate: false,
+                },
+            })
+
+            // Redraw when Cloudflare answers
+            model.onData = () => view.draw()
+
+            const anim = new Animator(
+                () => {
+                    model.step()
+                    view.draw()
+                    if (model.done) anim.stop()
+                },
+                -1,
+                30
+            ).stop()
+
+            new GUIDiv(
+                {
+                    'density %': {
+                        slider: [70, [1, 99, 1]],
+                        cmd: val => {
+                            model.density = val
+                            anim.restart(model, view)
+                        },
+                    },
+                    'tolerance %': {
+                        slider: [50, [1, 99, 1]],
+                        cmd: val => {
+                            model.tolerance = val
+                            anim.restart(model, view)
+                        },
+                    },
+                    '---': {},
+                    'start/stop': {
+                        button: () => {
+                            if (model.done) anim.restart(model, view)
+                            anim.toggle()
+                        },
+                    },
+                    step: { button: () => anim.once() },
+                    restart: { button: () => anim.restart(model, view) },
+                    '% happy': { monitor: [model, 'percentHappy'] },
+                },
+                {
+                    divId: 'controlDiv1',
+                    title: 'Schelling Segregation Model',
+                }
+            )
+
+            new GUIDiv(
+                {
+                    fps: {
+                        chooser: [2, [1, 2, 5, 10, 30]],
+                        cmd: val => anim.setFps(val),
+                    },
+
+                    ticks: { monitor: [anim, 'ticks'] },
+                    done: { monitor: [model, 'done'] },
+
+                    patchSize: {
+                        slider: [10, [5, 15, 1]],
+                        cmd: val => view.reset(val),
+                    },
+
+                    '---': {},
+
+                    '% happy': { plot: [model, 'percentHappy'] },
+                },
+                { divId: 'controlDiv2' }
+            )
+
+            Object.assign(window, { model, view, anim })
+        </script>
+
+        <div id="controlDiv1"></div>
+        <div id="modelDiv"></div>
+        <div id="controlDiv2"></div>
+    </body>
+</html>

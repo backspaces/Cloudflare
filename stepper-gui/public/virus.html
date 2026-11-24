@@ -1,0 +1,177 @@
+<html>
+    <head>
+        <title>Virus, on Cloudflare</title>
+    </head>
+
+    <body>
+        <script type="module">
+            import Animator from 'https://agentscript.org/src/Animator.js'
+            import TwoDraw from 'https://agentscript.org/src/TwoDraw.js'
+            import VirusModel from 'https://agentscript.org/models/VirusModel.js'
+            import remote from './remote.js'
+            import GUIDiv from 'https://agentscript.org/src/GUIDiv.js'
+
+            // This model runs on Cloudflare: see remote.js
+            const Model = remote(VirusModel, 'virus')
+
+            const model = new Model()
+            model.setup()
+
+            const turtleColors = {
+                infected: 'red',
+                susceptible: 'blue',
+                resistant: 'gray',
+            }
+            function isResistant(l) {
+                return (
+                    l.end0.state === 'resistant' || l.end1.state === 'resistant'
+                )
+            }
+            const view = new TwoDraw(model, {
+                div: 'modelDiv',
+                patchSize: 10,
+                drawOptions: {
+                    patchesColor: 'black',
+                    turtlesShape: 'circle',
+                    turtlesSize: 1.5,
+                    turtlesColor: t => turtleColors[t.state],
+                    // linksColor: 'white',
+                    linksColor: l => (isResistant(l) ? 'gray' : 'white'),
+                    linksWidth: 2,
+                },
+            })
+
+            // Redraw when Cloudflare answers
+            model.onData = () => view.draw()
+
+            const anim = new Animator(
+                () => {
+                    model.step()
+                    view.draw()
+                    if (model.done) anim.stop()
+                },
+                -1, // how many steps
+                30 // at fps steps/second
+            ).stop()
+
+            new GUIDiv(
+                {
+                    population: {
+                        slider: [150, [10, 300, 5]],
+                        cmd: val => {
+                            model.population = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    // : {
+                    avgLinks: {
+                        slider: [6, [1, 20, 1]],
+                        cmd: val => {
+                            model.averageNodeDegree = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    initOutbreak: {
+                        slider: [3, [1, 20, 1]],
+                        cmd: val => {
+                            model.initialOutbreakSize = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    'spread %': {
+                        slider: [2.5, [0, 10, 0.1]],
+                        cmd: val => {
+                            model.virusSpreadPercent = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    checkEvery: {
+                        slider: [1, [1, 20, 1]],
+                        cmd: val => {
+                            model.virusCheckFrequency = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    'recovery %': {
+                        slider: [5.0, [0, 10, 0.1]],
+                        cmd: val => {
+                            model.virusSpreadPercent = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    'resistance %': {
+                        slider: [5, [0, 100, 1]],
+                        cmd: val => {
+                            model.gainResistancePercent = val
+                            anim.restart(model, view)
+                        },
+                    },
+
+                    '---- 2': {},
+
+                    ticks: { monitor: [anim, 'ticks'] },
+                    done: { monitor: [model, 'done'] },
+                    'start/stop': {
+                        button: () => {
+                            if (model.done) anim.restart(model, view)
+                            anim.toggle()
+                        },
+                    },
+                    step: { button: () => anim.once() },
+                    restart: { button: () => anim.restart(model, view) },
+
+                    susceptible: { monitor: [model, 'susceptible'] },
+                    resistant: { monitor: [model, 'resistant'] },
+                    infected: { monitor: [model, 'infected'] },
+
+                    // tourLength: { monitor: [model, 'bestTourLength'] },
+                    // tourLength: { monitor: [model, 'tourLength'] },
+                    // tourChanges: { monitor: [model, 'tourChanges'] },
+                    // tourTicks: { monitor: [model, 'bestTourTick'] },
+                },
+                {
+                    divId: 'controlsDiv1',
+                    title: 'Virus Model',
+                }
+            )
+
+            new GUIDiv(
+                {
+                    patchSize: {
+                        slider: [8, [1, 20, 1]],
+                        cmd: val => view.reset(val),
+                    },
+
+                    fps: {
+                        chooser: [30, [5, 10, 30, 60]],
+                        cmd: val => anim.setFps(val),
+                    },
+                    downloadCanvas: {
+                        button: () => view.downloadCanvas(),
+                    },
+                    virus: {
+                        plot: [
+                            [model, 'infected'],
+                            [model, 'susceptible'],
+                            [model, 'resistant'],
+                        ],
+                    },
+                },
+                {
+                    divId: 'controlsDiv2',
+                }
+            )
+
+            Object.assign(window, { model, view, anim })
+        </script>
+        <div id="controlsDiv1"></div>
+        <div id="modelDiv"></div>
+        <div id="controlsDiv2"></div>
+    </body>
+</html>

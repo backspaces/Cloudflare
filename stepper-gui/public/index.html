@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Models on Cloudflare</title>
+        <style>
+            body { font-family: system-ui, sans-serif; margin: 1rem; }
+            p { max-width: 46rem; }
+            iframe { width: 100%; height: 85vh; border: 1px solid #ccc; }
+        </style>
+    </head>
+    <body>
+        <p>
+            AgentScript's views2gui pages, with one difference: the model
+            runs on Cloudflare, in a Durable Object, and the page only
+            draws it. Each model is shared: everyone using its page sees
+            the same one.
+        </p>
+        <p>
+            <label>Model
+                <select id="choose">
+                    <option value="hello">Hello</option>
+                    <option value="schelling">Schelling</option>
+                    <option value="virus">Virus</option>
+                </select>
+            </label>
+            <a id="alone" href="hello.html">open on its own</a>
+        </p>
+        <iframe id="page"></iframe>
+
+        <script>
+            // Show the chosen model's page below. The choice is kept in the
+            // address (like /#schelling), so a reload shows the same one.
+            const choose = document.getElementById('choose')
+            function show() {
+                const name = location.hash.slice(1) || 'hello'
+                choose.value = name
+                document.getElementById('page').src = name + '.html'
+                document.getElementById('alone').href = name + '.html'
+            }
+            choose.onchange = () => (location.hash = choose.value)
+            window.onhashchange = show
+            show()
+        </script>
+    </body>
+</html>
