@@ -229,9 +229,12 @@ at first, for comparison.)
 
 Cloudflare's free plan nominally allows 10 ms per request. These Schelling
 steps went far over and weren't stopped, so the limit for Durable Objects
-seems to be looser than for plain Workers (where [model/](../model/) was
-stopped). We shouldn't count on that: a model that's heavy per step belongs
-on the paid plan, $5 a month, which allows 30 seconds per request.
+seems to be looser than for plain Workers. An earlier test, a plain
+Worker that ran a whole Schelling model in one request, was allowed about
+1.1 seconds for 10 steps, once, but was stopped at 100 steps, with
+Cloudflare's error 1102, "exceeded CPU". We shouldn't count on the
+looser limit either: a model that's heavy per step belongs on the paid
+plan, $5 a month, which allows 30 seconds per request.
 
 So: AgentScript itself isn't too heavy to carry. Whether a model is too
 heavy depends on the model, and Hello-sized models fit easily.
