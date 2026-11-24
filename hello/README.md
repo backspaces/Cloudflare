@@ -63,7 +63,7 @@ Workers are different:
 - **You pay for work, not waiting.** Cloudflare counts the time your code
   spends computing, not the time it sits waiting. The free plan allows a
   little per request, which is plenty for hello, but not for a big model
-  (see [model/](../model/)).
+  (see [stepper/](../stepper/), "Is AgentScript too heavy?").
 
 ## What wrangler is
 
@@ -92,7 +92,7 @@ Terminal. You type its commands there; the three you'll use most:
   Cloudflare, so you can try it at `http://localhost:8787` without
   publishing anything. It can, because wrangler brings along a copy of
   **workerd**, the program Cloudflare itself uses to run Workers. Only the
-  storage is pretend: it's kept in a hidden `.wrangler/` folder here.
+  storage is pretend: it's kept in your home folder (more below).
 - `wrangler deploy` sends your Worker **to Cloudflare**, where it gets its
   real address and the whole world can use it.
 - `wrangler tail` shows, live, what your deployed Worker is doing: each
@@ -172,17 +172,23 @@ clock running it; visit http://localhost:8787/__scheduled to run it by hand.
 | [run](run) | runs wrangler in this folder, through Deno | the Terminal | no |
 | README.md | this | people | no |
 | `.wrangler/` | wrangler's scratch folder (not in git) | wrangler | never |
+| `~/.wrangler-state/hello/` | the pretend storage for `./run dev`, in your home folder | wrangler, during `dev` | never |
 
 `.wrangler/` appears the first time you run wrangler here. It holds:
 
-- `state/`: the pretend storage for `./run dev`, your Mac's own note and
-  count. It has nothing to do with the live site's storage.
 - `tmp/`: worker.js joined into one file, ready to run. Open
   `tmp/dev-…/worker.js` to see what that looks like.
 - `cache/`: things wrangler remembers, like which Cloudflare account you use.
 
-It's safe to delete. Wrangler makes a fresh one next time, but your local
-note and count start over, since that's where they were kept.
+It's safe to delete: wrangler makes a fresh one next time.
+
+The pretend storage, your Mac's own note and count, is kept in your home
+folder instead, in `~/.wrangler-state/hello/`. It has nothing to do with
+the live site's storage. Wrangler would keep it in `.wrangler/` too, but
+the [run](run) script tells it not to (`--persist-to`): this folder may be
+in Dropbox, and Dropbox copying a database while wrangler writes it can
+break it. Each folder here keeps its own, in `~/.wrangler-state/<folder>/`.
+Deleting it is safe too, but your local note and count start over.
 
 The odd one is wrangler.jsonc: its settings reach Cloudflare, but the file
 doesn't. It's like drafting a tax form on your own notepad: you copy the

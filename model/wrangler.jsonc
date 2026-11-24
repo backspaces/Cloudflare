@@ -1,8 +1,0 @@
-// Cloudflare's settings for this Worker. Paths are relative to this file.
-{
-  // The Worker's name: its address is https://model.<subdomain>.workers.dev
-  "name": "model",
-  "main": "worker.js",
-  "compatibility_date": "2026-10-01",
-  "observability": { "enabled": true }
-}

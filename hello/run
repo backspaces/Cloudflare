@@ -11,9 +11,14 @@ cd "$here" || exit 1
 if [ "$1" = bundle ]; then
   exec deno run -A npm:wrangler@4.151.3 deploy --dry-run --outdir out
 fi
+# ./run dev keeps its pretend storage (Durable Objects, KV) in your home
+# folder, in ~/.wrangler-state/<this folder's name>, not in .wrangler/ here.
+# This folder may be in Dropbox, and Dropbox syncing a database while
+# wrangler writes it can break it.
+state="$HOME/.wrangler-state/$(basename "$here")"
 if [ "$1" = dev ]; then
   shift
   # --test-scheduled: GET /__scheduled runs the Cron Trigger by hand
-  exec deno run -A npm:wrangler@4.151.3 dev --test-scheduled "$@"
+  exec deno run -A npm:wrangler@4.151.3 dev --test-scheduled --persist-to "$state" "$@"
 fi
 exec deno run -A npm:wrangler@4.151.3 "$@"
