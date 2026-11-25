@@ -1,0 +1,255 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Save and restore</title>
+        <style>
+            body { font-family: system-ui, sans-serif; margin: 1rem; max-width: 70rem; }
+            h2 { font-size: 1rem; margin: 1rem 0 0.3rem; }
+            button { margin: 0 0.3rem 0.4rem 0; }
+            code, pre { font-size: 0.85rem; }
+            .row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
+            .box { border: 1px solid #ccc; border-radius: 6px; padding: 0.5rem 0.8rem; }
+            #modelDiv canvas { border: 1px solid #ccc; }
+            #empty { width: 396px; height: 396px; border: 1px dashed #aaa; display: flex;
+                     align-items: center; justify-content: center; color: #888; }
+            #log { margin: 0; padding-left: 1.2rem; max-height: 12rem; overflow-y: auto; }
+            #log li:first-child { font-weight: bold; }
+            table { border-collapse: collapse; font-size: 0.85rem; }
+            td, th { border: 1px solid #ddd; padding: 0.1rem 0.4rem; text-align: right; }
+            th { background: #f4f4f4; }
+            .note { color: #666; font-size: 0.85rem; }
+        </style>
+    </head>
+    <body>
+        <h1>Save and restore</h1>
+        <p class="note">
+            AgentScript's Hello model, saved as data and made again from it.
+            <a href="https://github.com/backspaces/Cloudflare/tree/main/save-restore#readme"
+               target="_blank">README.md</a> explains it all.
+            In the browser's console, <code>model</code> and <code>view</code> are
+            this page's, and <code>toData</code>, <code>fromData</code> and
+            <code>restore</code> are there to try.
+        </p>
+
+        <div class="row">
+            <div>
+                <div id="modelDiv"></div>
+                <div id="empty">no model in memory</div>
+            </div>
+
+            <div>
+                <h2>1. Run the model</h2>
+                <button id="setup">Setup</button>
+                <button id="step">Step</button>
+                <button id="step10">Step ×10</button>
+
+                <h2>2. Save it</h2>
+                <button id="save">Save: toData(model)</button>
+
+                <h2>3. Forget it, and bring it back</h2>
+                <button id="forget">Forget</button>
+                <span class="note">or reload the page</span><br />
+                <button id="fromData">fromData: a new model</button>
+                <button id="restore">restore: into this model</button>
+
+                <h2>Now</h2>
+                <div class="box">
+                    <div>In memory: <span id="memory"></span></div>
+                    <div>In storage: <span id="storage"></span></div>
+                </div>
+
+                <h2>What happened</h2>
+                <ol id="log" reversed></ol>
+            </div>
+        </div>
+
+        <h2>The saved data</h2>
+        <div id="data" class="note">nothing saved yet</div>
+
+        <script type="module">
+            // Everything happens here, in the page. Two places hold the model:
+            //
+            // - `model`, a JavaScript variable: in memory. Reloading the page
+            //   loses it, as a Durable Object's memory is lost when it sleeps.
+            // - localStorage, the browser's storage: survives reloading, as a
+            //   Durable Object's storage survives sleep.
+            //
+            // AgentScript's ModelData.js moves the model between the two:
+            //   toData(model)            the model, as plain data, to save
+            //   fromData(Model, data)    a new model, made from that data
+            //   restore(model, data)     put the data into a model there is
+            import Model from 'https://agentscript.org/models/HelloModel.js'
+            import TwoDraw from 'https://agentscript.org/src/TwoDraw.js'
+            import { toData, fromData, restore } from 'https://agentscript.org/src/ModelData.js'
+
+            const key = 'save-restore' // its name in localStorage
+            let model = null // the model in memory, or null
+            let view = null // the drawing, made for the first model
+
+            // The console can use these too: try toData(model) there.
+            Object.assign(window, { Model, toData, fromData, restore })
+
+            const $ = id => document.getElementById(id)
+
+            // ---- The buttons ------------------------------------------
+
+            $('setup').onclick = async () => {
+                const newModel = new Model()
+                await newModel.startup()
+                newModel.setup()
+                show(newModel)
+                log('Setup: a new model, at tick 0.')
+            }
+
+            $('step').onclick = () => steps(1)
+            $('step10').onclick = () => steps(10)
+            function steps(n) {
+                if (!model) return log('No model in memory: Setup, or bring one back.')
+                for (let i = 0; i < n; i++) model.step() // each adds a tick
+                view.draw()
+                status()
+                log(`Step ×${n}: now at tick ${model.ticks}. Not saved yet.`)
+            }
+
+            $('save').onclick = () => {
+                if (!model) return log('No model in memory to save.')
+                const data = toData(model)
+                const text = JSON.stringify(data)
+                localStorage.setItem(key, text)
+                showData(data)
+                status()
+                log(`toData(model): tick ${data.ticks}, ${kb(text)} of data, ` +
+                    'saved in localStorage.')
+            }
+
+            $('forget').onclick = () => {
+                model = null
+                status()
+                log('Forget: the model in memory is gone. ' +
+                    'The saved data is still in localStorage.')
+            }
+
+            $('fromData').onclick = async () => {
+                const data = saved()
+                if (!data) return log('Nothing saved to make a model from.')
+                // A brand-new model, made from the data. It's a different
+                // object from the one before, so the view is pointed at it
+                // (in show()).
+                show(await fromData(Model, data))
+                log(`fromData(Model, data): a new model, at tick ${model.ticks}.`)
+            }
+
+            $('restore').onclick = () => {
+                const data = saved()
+                if (!data) return log('Nothing saved to restore.')
+                if (!model) return log('restore needs a model to fill: ' +
+                    'Setup first, or use fromData.')
+                const before = model.ticks
+                // The same model object, filled with the saved data: its
+                // turtles, links and patches are replaced in place, so the
+                // view, which holds this model, just draws again.
+                restore(model, data)
+                view.draw()
+                status()
+                log(`restore(model, data): the same model, from tick ${before} ` +
+                    `back to tick ${model.ticks}.`)
+            }
+
+            // ---- Showing things ---------------------------------------
+
+            // Make `newModel` the model in memory, and draw it.
+            function show(newModel) {
+                model = newModel
+                if (!view) {
+                    view = new TwoDraw(model, {
+                        div: 'modelDiv',
+                        patchSize: 12,
+                        drawOptions: { turtlesSize: 1.5 },
+                    })
+                } else {
+                    // TwoDraw keeps the model, and the turtles and links to
+                    // draw, from the model it was made with. A different
+                    // model means telling it about all three.
+                    view.model = model
+                    view.drawOptions.turtles = model.turtles
+                    view.drawOptions.links = model.links
+                }
+                view.draw()
+                status()
+            }
+
+            // What's in memory and in storage, and the drawing if any.
+            function status() {
+                // For the browser's console: `model` and `view` there are
+                // always this page's, kept up to date here. (Variables in a
+                // module, like this script, aren't seen by the console
+                // unless they're put on `window`.)
+                window.model = model
+                window.view = view
+                $('modelDiv').style.display = model ? '' : 'none'
+                $('empty').style.display = model ? 'none' : ''
+                $('memory').textContent = model ? `a model at tick ${model.ticks}` : 'nothing'
+                const text = localStorage.getItem(key)
+                $('storage').textContent = text
+                    ? `a model saved at tick ${JSON.parse(text).ticks}, ${kb(text)}`
+                    : 'nothing'
+            }
+
+            function saved() {
+                const text = localStorage.getItem(key)
+                return text ? JSON.parse(text) : null
+            }
+
+            const kb = text => `${(text.length / 1000).toFixed(1)} KB`
+
+            function log(message) {
+                const li = document.createElement('li')
+                li.textContent = message
+                $('log').prepend(li)
+            }
+
+            // The saved data, as tables. Numbers are rounded here, to read
+            // easily; the data itself keeps them in full.
+            function showData(data) {
+                const { patches, turtles, links, ...rest } = data
+                const round = v => (typeof v === 'number' ? +v.toFixed(3) : v)
+                const table = rows => {
+                    const keys = [...new Set(rows.flatMap(Object.keys))]
+                    const head = keys.map(k => `<th>${k}</th>`).join('')
+                    const body = rows
+                        .map(r => '<tr>' + keys.map(k => `<td>${round(r[k]) ?? ''}</td>`).join('') + '</tr>')
+                        .join('')
+                    return `<table><tr>${head}</tr>${body}</table>`
+                }
+                $('data').className = ''
+                $('data').innerHTML = `
+                    <div class="row">
+                        <div><h2>The model itself</h2><pre>${JSON.stringify(rest, null, 2)}</pre></div>
+                        <div><h2>turtles: ${turtles.length}</h2>${table(turtles)}</div>
+                        <div><h2>links: ${links.length}</h2>${table(links)}</div>
+                        <div><h2>patches: ${patches.length}</h2>
+                            <p class="note">Hello's patches have no variables of
+                            their own, so each is just its breed and id.
+                            The first three:</p>${table(patches.slice(0, 3))}
+                            <p class="note">They're most of the data's size.</p>
+                        </div>
+                    </div>
+                    <details><summary>All of it, as saved (JSON)</summary>
+                        <pre>${JSON.stringify(data, null, 1)}</pre></details>`
+            }
+
+            // On opening the page: show what's saved from before, if anything.
+            status()
+            const before = saved()
+            if (before) {
+                showData(before)
+                log(`Page opened: nothing in memory, but localStorage has a ` +
+                    `model saved at tick ${before.ticks}. Try fromData.`)
+            } else {
+                log('Page opened: nothing in memory, nothing saved. Press Setup.')
+            }
+        </script>
+    </body>
+</html>

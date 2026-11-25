@@ -16,6 +16,7 @@ This repo is for trying the platform itself.
 | Playgrounds | [playground/](playground/) | any html file or folder as its own static Worker, at a permanent `pg-<name>.…workers.dev` address |
 | Hello Worker | [hello/](hello/) | the smallest Worker with all the parts: static assets, routing, settings and secrets, KV, a Durable Object, a Cron Trigger |
 | AgentScript model in a Worker | [hello-model/](hello-model/) | HelloModel wrapped in a `fetch()`: settings from `wrangler.jsonc`, choices in the address, the model's data back as JSON |
+| Save and restore | [save-restore/](save-restore/) | the idea behind every Durable Object (save as data, rebuild when forgotten), shown in one page with AgentScript's `toData`, `fromData` and `restore` |
 
 ## Still to try
 

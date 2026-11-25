@@ -1,0 +1,8 @@
+#!/bin/bash
+# Wrangler, run in this folder, through Deno.
+#   ./run dev          # on this Mac, at http://localhost:8787
+#   ./run deploy       # to https://save-restore.<subdomain>.workers.dev
+
+here="$(builtin cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null && pwd)"
+cd "$here" || exit 1
+exec deno run -A npm:wrangler@4.151.3 "$@"

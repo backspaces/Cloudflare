@@ -1,0 +1,12 @@
+// Cloudflare's settings for this site. Paths are relative to this file.
+// There's no Worker code here: Cloudflare only serves the files in public/,
+// as they are, the way a playground does. Everything happens in the page.
+{
+  // The name: its address is https://save-restore.<subdomain>.workers.dev
+  "name": "save-restore",
+  "compatibility_date": "2026-10-01",
+
+  // The page: files in public/ are served as they are, so / is
+  // public/index.html.
+  "assets": { "directory": "./public" }
+}
