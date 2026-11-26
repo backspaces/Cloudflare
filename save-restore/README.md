@@ -13,6 +13,8 @@ This README assumes you know some JavaScript, and a little AgentScript for
 the second half. New words are in **bold** the first time, and listed at the
 end. [hello/](../hello/) explains Workers and Durable Objects from the start.
 
+Live: https://save-restore.backspaces.workers.dev
+
 ## Try it
 
     ./run dev

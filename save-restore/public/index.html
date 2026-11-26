@@ -10,6 +10,9 @@
             button { margin: 0 0.3rem 0.4rem 0; }
             code, pre { font-size: 0.85rem; }
             .row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
+            /* Beside the drawing, narrowing (and wrapping its text) to fit,
+               and below it only when there's less than 18rem of room. */
+            .controls { flex: 1 1 18rem; min-width: 18rem; }
             .box { border: 1px solid #ccc; border-radius: 6px; padding: 0.5rem 0.8rem; }
             #modelDiv canvas { border: 1px solid #ccc; }
             #empty { width: 396px; height: 396px; border: 1px dashed #aaa; display: flex;
@@ -39,7 +42,7 @@
                 <div id="empty">no model in memory</div>
             </div>
 
-            <div>
+            <div class="controls">
                 <h2>1. Run the model</h2>
                 <button id="setup">Setup</button>
                 <button id="step">Step</button>
